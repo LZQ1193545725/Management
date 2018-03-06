@@ -1,0 +1,82 @@
+SELECT a.consumption_id,a.money,a.created_on,b.dish_name,SUM(b.dish_num) AS dish_num,SUM(b.dish_return_count) AS dish_return_count,b.dish_price,p.payment_type_name,p.payment_money,c.shop_name  FROM consumption_history a LEFT JOIN dining_order_history d ON a.consumption_id=d.consumption_id LEFT JOIN order_dish_history b ON d.order_id=b.dining_order_id LEFT JOIN consumption_payment_history p ON a.consumption_id=p.consumption_id LEFT JOIN shop c ON a.shop_id=c.shop_id WHERE a.created_on LIKE '%2016-12-04 12%' GROUP BY a.consumption_id,a.money,a.created_on,b.dish_name,b.dish_price,p.payment_type_name,p.payment_money,c.shop_name 
+ 
+
+private void UpdateData(object sender, ElapsedEventArgs e)
+        {
+            string rmsdb = "Server=localhost;Database=test;Uid=root;Pwd=root";
+            string collectiondata = "Data Source=DESKTOP-LDV7G3C" + "\\" + "SQLEXPRESS;Initial Catalog=collectiondata;Persist Security Info=True;User ID=sa;Password=123456";
+            string time = DateTime.Now.AddMonths(-2).ToString("yyyy-MM-dd");
+
+            string getdata = "SELECT a.consumption_id,a.money,a.created_on,b.dish_name,b.dish_num,b.dish_price,c.shop_name,p.payment_type_name,p.payment_money FROM consumption_history a LEFT JOIN dining_order_history d ON a.consumption_id=d.consumption_id LEFT JOIN consumption_payment_history p ON a.consumption_id=p.consumption_id LEFT JOIN order_dish_history b ON d.order_id=b.dining_order_id LEFT JOIN shop c ON a.shop_id=c.shop_id where a.created_on like'%" + time + "%'"; //获取consumption_history数据
+            MySqlConnection mycon = new MySqlConnection(rmsdb);   //连接mysql数据库
+
+            SqlConnection sqlcon = new SqlConnection(collectiondata);   //连接sqlserver数据库
+
+            MySqlCommand mycmd = new MySqlCommand();   //mysql
+
+            SqlCommand sqlcmd = new SqlCommand();   //sqlserver
+
+            mycon.Open();
+
+            mycmd.Connection = mycon;
+            ;
+            mycmd.CommandText = getdata;
+
+            MySqlDataReader mydr = mycmd.ExecuteReader();
+
+            while (mydr.Read())
+            {
+                string consumption_id = mydr["consumption_id"].ToString();
+                decimal money = Convert.ToDecimal(mydr["money"].ToString());
+                string shop_name = mydr["shop_name"].ToString();
+
+                string created_on = mydr["created_on"].ToString();
+
+                string dish_name = mydr["dish_name"].ToString();
+                decimal dish_num;
+                if (mydr["dish_num"] == DBNull.Value)
+                {
+                    dish_num = 0;
+                }
+                else
+                {
+                    dish_num = Convert.ToDecimal(mydr["dish_num"]);
+                }
+
+                decimal dish_price;
+                if (mydr["dish_price"] == DBNull.Value)
+                {
+                    dish_price = 0;
+                }
+                else
+                {
+                    dish_price = Convert.ToDecimal(mydr["dish_price"].ToString());
+                }
+
+                string payment_type_name = mydr["payment_type_name"].ToString();
+
+                decimal payment_money;
+                if (mydr["payment_money"] == DBNull.Value)
+                {
+                    payment_money = 0;
+                }
+                else
+                {
+                    payment_money = Convert.ToDecimal(mydr["payment_money"]);
+                }
+
+                string sqlstr = "select * from data where consumption_id='" + consumption_id + "' and dish_name='" + dish_name + "'";
+                sqlcon.Open();
+                if ((new SqlCommand(sqlstr,sqlcon).ExecuteScalar())==null)
+                {
+                   sqlcon.Close();
+                   sqlcon.Open();
+                   string insert = "insert into data(consumption_id,money,shop_name,created_on,dish_name,dish_num,dish_price,payment_type_name,payment_money) values('" + consumption_id + "'," + money + ",'" + shop_name + "','" + created_on + "','" + dish_name + "'," + dish_num + "," + dish_price + ",'" + payment_type_name + "'," + payment_money + ")";
+                   sqlcmd.Connection = sqlcon;
+                   sqlcmd.CommandText = insert;
+                   sqlcmd.ExecuteNonQuery();
+                 }
+                sqlcon.Close();
+            }
+            
+        }
