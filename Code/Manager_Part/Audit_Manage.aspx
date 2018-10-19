@@ -37,7 +37,7 @@
                 $("#Status1").css("margin-left", (x - 1100) / 2 + "px");
             })
 
-            $("a").click(function ()
+            $(".btn-link").click(function ()
             {
                 $("#main_content").attr("src", "Audit.aspx?id="+$(this).attr("title"));
             })
